@@ -1,0 +1,347 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        -4240
+      ],
+      "id": "fdd47e52-bf61-4ef5-9b24-2440c4693769",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k",
+          "mode": "list",
+          "cachedResultName": "N8N example",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -304,
+        -4240
+      ],
+      "id": "68ec030b-a824-4acc-b4bd-32c0cc7967ae",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "q470qZruv66Q8qVn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "Reminder: Action Needed",
+        "message": "={{ $json.text }}",
+        "options": {
+          "sendTo": "={{ $('Get row(s) in sheet').item.json.email }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        576,
+        -4240
+      ],
+      "id": "4e7b7701-bd15-4d51-b746-7029d7945c57",
+      "name": "Create a draft",
+      "webhookId": "9fe4ba50-e9b1-4d32-ae24-d5e0b84beef5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gULOBjE0tL6WVgOK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=name: {{ $json.Name }}\nTo:{{ $json.email }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an assistant that writes professional emails using the personality style provided.  Write an email of 100 to 150 words about a project deadline reminder.  Use the following details:  Name: {{ $json.Name  }} i need the email in the personality : {{ $json.character }}  Deadline: Instructions: - The email must naturally reflect the person’s personality style. - Keep the tone consistent throughout the email. - Do NOT sound robotic. - Include a polite greeting and a clean closing line. - The mail should gently remind them about the upcoming deadline and encourage timely completion. - Make the email friendly, helpful, and professional.  Write ONLY the email content (no explanations)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -96,
+        -4240
+      ],
+      "id": "081bff81-97e1-4368-bf68-67db15e0d622",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -4016
+      ],
+      "id": "e21fda36-0ff8-4b2c-9bfd-9258cda87eab",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FVrikc8MuEUixled",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -160,
+        -3824
+      ],
+      "id": "4f97edde-65a1-4193-8174-23a9223c61c1",
+      "name": "When chat message received",
+      "webhookId": "ab12b205-f1cf-4401-a15a-838cd515289e"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an AI Email Generation Agent. Your job is to create personalized draft emails for candidates using the information provided from Google Sheets.\n\nFor each candidate, you will receive the following fields:\n\n- Name: {{name}}\n- Email: {{email}}\n- Personality/Tone: {{character}}\n\nYour task:\n1. Understand the candidate’s personality/tone.\n2. Write a personalized OFFER LETTER email for DELL company.\n3. Write a FINAL SHORTLISTED ANNOUNCEMENT email.\n4. Both emails should feel natural, professional, and match the candidate’s personality style.\n5. Each email must include:\n   - Joining Date: July 1, 2026\n   - Location: Dell Office, Bangalore\n   - Role: Associate Engineer (keep generic unless changed)\n6. Length: 120–160 words per email.\n7. Maintain consistency and avoid robotic phrases.\n\nYour output format MUST be:\n\n---\nCANDIDATE NAME: {{name}}\nEMAIL: {{email}}\nPERSONALITY: {{character}}\n\n### SUBJECT (Offer Letter)\n<Write an appropriate subject line here>\n\n### BODY (Offer Letter)\n<Write a 120–160 word offer letter here, personalized based on personality, mentioning Dell, joining date, and Bangalore location.>\n\n---\n\n### SUBJECT (Final Shortlisted Mail)\n<Write an appropriate subject line here>\n\n### BODY (Final Shortlisted Mail)\n<Write a 120–160 word shortlisted announcement here, personalized based on personality, congratulating them and reminding them of joining date and location.>\n---\n\nImportant instructions:\n- Do not add extra explanations.\n- Do not add placeholders other than what is required.\n- Output only the result in clean text following the exact structure.\n- The tone should adapt to {{character}} (e.g., calm, friendly, bold, humorous, formal, etc.).\n- Make both emails sound genuinely written for that specific person.\n\nGenerate the output now.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        48,
+        -3824
+      ],
+      "id": "cab42445-8826-4e77-9e4f-271968c0a200",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -3616
+      ],
+      "id": "00d1e3a5-ce4d-4c2e-9073-5642e8a50882",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FVrikc8MuEUixled",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        -3600
+      ],
+      "id": "98cceacb-2a3a-411e-9531-870164edcd41",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k",
+          "mode": "list",
+          "cachedResultName": "N8N example",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TrVhkNXfQcJv-VU6lejxcbmrKMzZEKIoOxXlndEFF7k/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        -3712
+      ],
+      "id": "5632125b-a291-4ea8-894e-34042950d59f",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "q470qZruv66Q8qVn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To_Email', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        -3616
+      ],
+      "id": "805d3485-5214-4b7e-b99a-43dc182e2df7",
+      "name": "Create a draft in Gmail",
+      "webhookId": "f2946488-c081-48a7-97fa-7956feb30155",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gULOBjE0tL6WVgOK",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "06dafdd9-f705-4917-9177-57306ed38190",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9797403a8d80f9b6872bdbf1de069b992f572f9435fd453bb0afc5ac00fc69b3"
+  },
+  "id": "kLgRsh9pyjyofn3T",
+  "tags": []
+}
